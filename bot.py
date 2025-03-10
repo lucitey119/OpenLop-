@@ -160,9 +160,10 @@ class OpenLoop:
             except ValueError:
                 print(f"{Fore.RED + Style.BRIGHT}Invalid input. Enter a number (1, 2 or 3).{Style.RESET_ALL}")
     
+    # Note: The user_login() method is kept for reference but is not used because we are now loading the token from access_token.py.
     async def user_login(self, email: str, password: str, proxy=None):
         url = "https://api.openloop.so/users/login"
-        data = json.dumps({"username":email, "password":password})
+        data = json.dumps({"username": email, "password": password})
         headers = {
             **self.headers,
             "Authorization": "Bearer",
@@ -232,7 +233,7 @@ class OpenLoop:
             
     async def send_ping(self, email: str, password: str, token: str, quality: int, use_proxy: bool, proxy=None, retries=5):
         url = "https://api.openloop.so/bandwidth/share"
-        data = json.dumps({"quality":quality})
+        data = json.dumps({"quality": quality})
         headers = {
             **self.headers,
             "Authorization": f"Bearer {token}",
@@ -264,17 +265,17 @@ class OpenLoop:
 
                 return None
             
+    # Modified to load the access token from access_token.py instead of calling the login endpoint.
     async def get_access_token(self, email: str, password: str, use_proxy: bool):
-        proxy = self.get_next_proxy_for_account(email) if use_proxy else None
-        token = None
-        while token is None:
-            token = await self.user_login(email, password, proxy)
-            if not token:
-                proxy = self.rotate_proxy_for_account(email) if use_proxy else None
-                continue
-            
-            self.print_message(email, proxy, Fore.GREEN, "GET Access Token Success")
+        try:
+            # Import access_token.py (ensure that access_token.py is in the same directory and contains ACCESS_TOKEN)
+            import access_token as token_file
+            token = token_file.ACCESS_TOKEN
+            self.print_message(email, None, Fore.GREEN, "GET Access Token from access_token.py Success")
             return token
+        except Exception as e:
+            self.print_message(email, None, Fore.RED, f"Failed to get token from access_token.py: {e}")
+            return None
 
     async def process_complete_missions(self, email: str, password: str, token: str, use_proxy: bool):
         while True:
